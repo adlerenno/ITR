@@ -130,6 +130,11 @@ static int decompress(GrammarNeighborhood* nb, HEdge* e, CGraphEdge* res) {
 //                    return 0;
 //            }
 //        }
+        for (int i=0; i<nb->rank; i++)
+        {
+            if(nb->nodes[i] != CGRAPH_NODES_ALL && !hedge_contains(e, nb->nodes[i]))
+                return 0;
+        }
 
         if(res) { // res may be NULL
             res->rank = e->rank;

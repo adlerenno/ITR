@@ -8,7 +8,7 @@
 
 // Default maximum rank of RePair
 #define DEFAULT_MAX_RANK 128
-#define LIMIT_MAX_RANK 128
+#define LIMIT_MAX_RANK 1024
 
 // Default paramer if monograms should be replaced
 #define DEFAULT_MONOGRAMS (false)
@@ -17,7 +17,7 @@
 #define DEFAULT_FACTOR 64
 
 // Default parameter if the NT table should be added
-#define DEFAULT_NT_TABLE (true)
+#define DEFAULT_NT_TABLE (false)
 
 #ifdef RRR
 // Default value of bitsequences of type RRR are used

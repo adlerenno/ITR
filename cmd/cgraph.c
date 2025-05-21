@@ -609,7 +609,7 @@ static int do_decompress(CGraphR* g, const char* output, const char* format, boo
                 //Write empty space plus txt here;
                 if (i > 0)
                 {
-                    int suc = printf(",");
+                    int suc = fprintf(out_fd, ",");
                     if (suc  == EOF) {
                         cgraphr_edges_finish(it);
                         goto exit_0;
@@ -842,9 +842,11 @@ void perform_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_q
         if (verbose)
         {
             for(size_t i = 0; i < ls.len; i++) {
-                for (CGraphRank j = 0; j < ls.data[i].rank; j++) {
-                    printf(",\t%" PRId64, ls.data[i].nodes[j]);
+                printf("%" PRId64, ls.data[i].nodes[0]);
+                for (CGraphRank j = 1; j < ls.data[i].rank; j++) {
+                    printf(", %" PRId64, ls.data[i].nodes[j]);
                 }
+                printf("\n");
             }
         }
 

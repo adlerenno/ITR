@@ -6,7 +6,6 @@
 #include "startsymbol.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <reader.h>
 #include <cgraph.h>
 #include <panic.h>
