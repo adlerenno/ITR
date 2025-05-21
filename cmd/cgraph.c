@@ -72,8 +72,9 @@ static void print_usage(bool error) {
     "                                           this asks for all incoming edges of node 5.\n"
     "                                        Note that it is not allowed to pass no label and no nodes to this function.\n"
     "                                        Use --decompress in this case.\n"
-    "         --exist_query                  Use this flag together with hyperedge to indicate \n"
-    "                                        that we look for an edge that matches exactly the given parameter.\n"
+    "         --exist-query                  Use this flag together with hyperedge to indicate \n"
+    "                                        that we look if there is an edge that contains all provided nodes.\n"
+    "         --exact-query                  check if there is an edge containing exactly these nodes and no other.\n"
     "         --sort-result                  sort the resulting edges using quicksort.\n"
     "       --query-file                     input file with one line per query. For testing only.\n"
 	"       --node-count                     returns the number of nodes in the graph\n"
@@ -103,6 +104,7 @@ enum opt {
 	OPT_R_EDGES,
     OPT_R_HYPEREDGES,
     OPT_R_EXIST_QUERY,
+    OPT_R_EXACT_QUERY,
     OPT_R_SORT_RESULT,
     OPT_R_QUERY_FILE,
 	OPT_R_NODE_COUNT,
@@ -239,6 +241,7 @@ static int parse_args(int argc, char** argv, CGraphArgs* argd) {
 		{"edges", required_argument, 0, OPT_R_EDGES},
         {"hyperedges", required_argument, 0, OPT_R_HYPEREDGES},
         {"exist-query", no_argument, 0, OPT_R_EXIST_QUERY},
+        {"exact-query", no_argument, 0, OPT_R_EXACT_QUERY},
         {"sort-result", no_argument, 0, OPT_R_SORT_RESULT},
         {"query-file", required_argument, 0, OPT_R_QUERY_FILE},
 		{"node-count", no_argument, 0, OPT_R_NODE_COUNT},
@@ -259,6 +262,7 @@ static int parse_args(int argc, char** argv, CGraphArgs* argd) {
 	argd->params.factor = DEFAULT_FACTOR;
 	argd->params.nt_table = DEFAULT_NT_TABLE;
     argd->params.exist_query = DEFAULT_EXIST_QUERY;
+    argd->params.exact_query = DEFAULT_EXACT_QUERY;
     argd->params.sort_result = DEFAULT_SORT_RESULT;
 #ifdef RRR
 	argd->params.rrr = DEFAULT_RRR;
@@ -330,6 +334,10 @@ static int parse_args(int argc, char** argv, CGraphArgs* argd) {
         case OPT_R_EXIST_QUERY:
             check_mode(mode_compress, mode_read, false);
             argd->params.exist_query = true;
+            break;
+        case OPT_R_EXACT_QUERY:
+            check_mode(mode_compress, mode_read, false);
+            argd->params.exact_query = true;
             break;
         case OPT_R_SORT_RESULT:
             check_mode(mode_compress, mode_read, false);
@@ -704,7 +712,7 @@ int parse_hyperedge_arg(const char* s, HyperedgeArg* arg) {
     arg->rank++;
 
     for (int npc = 1; * s == ','; npc++) {
-        s = parse_int(s, (uint64_t *) &arg->nodes[npc]);
+        s = parse_int(s+1, (uint64_t *) &arg->nodes[npc]);
         if (!s)
             return -1;
         arg->rank++;
@@ -795,13 +803,13 @@ void edge_append(EdgeList* l, CGraphEdge* e) {
 	l->data[l->len++] = *e;
 }
 
-bool do_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_query, bool sort_result, EdgeList* result)
+bool do_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_query, bool exact_query, bool sort_result, EdgeList* result)
 {
     if (exist_query) {
-        return cgraphr_edge_exists(g, rank, nodes, true);
+        return cgraphr_edge_exists(g, rank, nodes, exact_query, true);
     }
     CGraphEdgeIterator* it;
-    it = cgraphr_edges(g, rank, nodes, true);
+    it = cgraphr_edges(g, rank, nodes, exact_query, true);
 
 
     if(!it)
@@ -819,10 +827,10 @@ bool do_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_query,
     return result->len > 0;
 }
 
-void perform_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_query, bool sort_result, bool verbose)
+void perform_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_query, bool exact_query, bool sort_result, bool verbose)
 {
     EdgeList ls = {0};
-    bool has_result = do_search(g, rank, nodes, exist_query, sort_result, &ls);
+    bool has_result = do_search(g, rank, nodes, exist_query, exact_query, sort_result, &ls);
 
     if (exist_query)
     {
@@ -851,7 +859,7 @@ void perform_search(CGraphR* g, CGraphRank rank, CGraphNode* nodes, bool exist_q
     }
 }
 
-int perform_query_file(CGraphR* g, const char* query_file, bool exist_query, bool sort_result, bool verbose)
+int perform_query_file(CGraphR* g, const char* query_file, bool exist_query, bool exact_query, bool sort_result, bool verbose)
 {
     FILE* in_fd = fopen((const char*) query_file, "r");
     if(!in_fd)
@@ -862,8 +870,12 @@ int perform_query_file(CGraphR* g, const char* query_file, bool exist_query, boo
     int cn = 0;
     while (fgets(line, sizeof(line), in_fd)) {
         printf("Query %d: %s", cn, line);
-        parse_hyperedge_arg(line, &arg);
-        perform_search(g, arg.rank, arg.nodes, exist_query, sort_result, verbose);
+        if (parse_hyperedge_arg(line, &arg) < 0)
+        {
+            fprintf(stderr, "Parsing error of file.");
+            return -1;
+        }
+        perform_search(g, arg.rank, arg.nodes, exist_query, exact_query, sort_result, verbose);
         cn++;
     }
     fclose(in_fd);
@@ -939,7 +951,7 @@ static int do_read(const char* input, const CGraphArgs* argd) {
                 fprintf(stderr, "failed to parse edge argument \"%s\"\n", cmd->arg_str);
                 break;
             }
-            perform_search(g, arg.rank, arg.nodes, argd->params.exist_query, argd->params.sort_result, argd->verbose);
+            perform_search(g, arg.rank, arg.nodes, argd->params.exist_query, argd->params.exact_query, argd->params.sort_result, argd->verbose);
             res = 0;
             break;
         }
@@ -948,7 +960,7 @@ static int do_read(const char* input, const CGraphArgs* argd) {
                 fprintf(stderr, "query file %s does not exists.", cmd->arg_str);
                 break;
             }
-            perform_query_file(g, cmd->arg_str, argd->params.exist_query, argd->params.sort_result, argd->verbose);
+            perform_query_file(g, cmd->arg_str, argd->params.exist_query, argd->params.exact_query, argd->params.sort_result, argd->verbose);
             res = 0;
             break;
         }

@@ -15,7 +15,7 @@
 // In own tests with LARGE graphs which took hours to compress, I got a few rules with 28 edges.
 // But this value never exceeded.
 // So the maximum number of edges in a rule is limited to (MAX_RANK / 2) = 64.
-#define MAX_RULE_SIZE (RANK_MAX / 2)
+#define MAX_RULE_SIZE (LIMIT_MAX_RANK / 2)
 
 typedef struct {
 	Reader r;

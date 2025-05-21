@@ -114,7 +114,7 @@ void startsymbol_neighborhood(StartSymbolReader* s, int query_type, CGraphRank r
     n->query_type = query_type;
     switch (query_type)
     {
-        case CGRAPH_NODE_QUERY: case CGRAPH_SET_QUERY:
+        case CGRAPH_EXACT_QUERY: case CGRAPH_CONTAINS_QUERY:
             k2_iter_init_row(s->matrix, n->nodes[0], &n->it);
             break;
 //        case CGRAPH_PREDICATE_QUERY:
@@ -144,8 +144,8 @@ static inline int if_get(StartSymbolReader* s, int i, int* indf) {
 	reader_bitpos(&s->r, s->ifs.off + off);
 
 	int n = reader_eliasdelta(&s->r);
-	if(n > RANK_MAX)
-		panic("index function %d with a rank of %d exceeds the maximum rank of %d", i, n, RANK_MAX);
+	if(n > LIMIT_MAX_RANK)
+		panic("index function %d with a rank of %d exceeds the maximum rank of %d", i, n, LIMIT_MAX_RANK);
 
 	for(int k = 0; k < n; k++)
 		indf[k] = reader_eliasdelta(&s->r);
@@ -193,7 +193,7 @@ static inline int get_edge(StartSymbolNeighborhood* n, uint64_t e, StEdge* edge)
 
 	int ix = edge_ifs_get(s, e); // Index of the index function
 
-	int indx[RANK_MAX]; // The index function
+	int indx[LIMIT_MAX_RANK]; // The index function
 	int i_len = if_get(s, ix, indx); // length of the index function
 
 	for(int j = 0; j < i_len; j++)
@@ -210,12 +210,12 @@ int startsymbol_neighborhood_next(StartSymbolNeighborhood* n, StEdge* edge) {
         int res;
         switch (n->query_type)
         {
-            case CGRAPH_NODE_QUERY: case CGRAPH_SET_QUERY:
+            case CGRAPH_EXACT_QUERY: case CGRAPH_CONTAINS_QUERY:
                 res = k2_iter_next(&n->it, &neigh);
                 break;
-            case CGRAPH_PREDICATE_QUERY:
-                res = eliasfano_iter_next(&n->efit, &neigh);
-                break;
+//            case CGRAPH_PREDICATE_QUERY:
+//                res = eliasfano_iter_next(&n->efit, &neigh);
+//                break;
             default:
             case CGRAPH_DECOMPRESS_QUERY:
                 res = startsymbol_next(&n->dit, &neigh);
@@ -243,12 +243,12 @@ int startsymbol_neighborhood_next(StartSymbolNeighborhood* n, StEdge* edge) {
 void startsymbol_neighborhood_finish(StartSymbolNeighborhood* n) {
     switch (n->query_type)
     {
-        case CGRAPH_NODE_QUERY: case CGRAPH_SET_QUERY:
+        case CGRAPH_EXACT_QUERY: case CGRAPH_CONTAINS_QUERY:
             k2_iter_finish(&n->it);
             break;
-        case CGRAPH_PREDICATE_QUERY:
-            eliasfano_iter_finish(&n->efit);
-            break;
+//        case CGRAPH_PREDICATE_QUERY:
+//            eliasfano_iter_finish(&n->efit);
+//            break;
         case CGRAPH_DECOMPRESS_QUERY:
             startsymbol_finish(&n->dit);
             break;

@@ -25,6 +25,7 @@
 #endif
 
 #define DEFAULT_EXIST_QUERY (false)
+#define DEFAULT_EXACT_QUERY (false)
 #define DEFAULT_SORT_RESULT (false)
 
 // Magic number of the compressed graph file

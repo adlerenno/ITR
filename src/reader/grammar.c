@@ -119,17 +119,17 @@ static bool hedge_contains(HEdge* e, uint64_t n) {
 static int decompress(GrammarNeighborhood* nb, HEdge* e, CGraphEdge* res) {
 
 	uint64_t first_nt;
-	if(e->label < (first_nt = nb->g->rules->first_nt)) { // terminal found
+	if (e->label < (first_nt = nb->g->rules->first_nt)) { // terminal found
 //		if(nb->label != CGRAPH_LABELS_ALL && e->label != nb->label) // specific edges wanted and label does not match
 //			return 0;
-//        if(nb->rank != CGRAPH_NODES_ALL && nb->rank != e->rank)
-//            return 0;
-        if (nb->start.query_type == CGRAPH_NODE_QUERY || nb->start.query_type == CGRAPH_PREDICATE_QUERY) {
-            for (int i = 0; i < nb->rank; i++) {
-                if (nb->nodes[i] != CGRAPH_NODES_ALL && e->nodes[i] != nb->nodes[i])
-                    return 0;
-            }
-        }
+        if(nb->rank != CGRAPH_NODES_ALL && nb->start.query_type == CGRAPH_EXACT_QUERY && nb->rank != e->rank)
+            return 0;
+//        if (nb->start.query_type == CGRAPH_EXACT_QUERY || nb->start.query_type == CGRAPH_CONTAINS_QUERY) { //TODO: This checks only exact order.
+//            for (int i = 0; i < nb->rank; i++) {
+//                if (nb->nodes[i] != CGRAPH_NODES_ALL && e->nodes[i] != nb->nodes[i])
+//                    return 0;
+//            }
+//        }
 
         if(res) { // res may be NULL
             res->rank = e->rank;

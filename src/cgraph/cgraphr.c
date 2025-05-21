@@ -89,7 +89,7 @@ size_t cgraphr_edge_label_count(CGraphR* g) {
 
 bool cgraphr_edges_next(CGraphEdgeIterator* it, CGraphEdge* e) {
 	CGraphEdge t;
-    CGraphNode nodes[128];
+    CGraphNode nodes[LIMIT_MAX_RANK];
     t.nodes = nodes;
 	switch(grammar_neighborhood_next((GrammarNeighborhood*) it, &t)) {
 	case 1:
@@ -117,7 +117,7 @@ void cgraphr_edges_finish(CGraphEdgeIterator* it) {
 	free(it);
 }
 
-bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool no_node_order) {
+bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool exact_query, bool no_node_order) {
 	GraphReaderImpl* gi = (GraphReaderImpl*) g;
 
     for (int i = 0; i < rank; i++)
@@ -129,13 +129,13 @@ bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, b
 	//	return false;
 
 	GrammarNeighborhood nb;
-    if (no_node_order)
+    if (exact_query)
     {
-        grammar_neighborhood(gi->gr, CGRAPH_SET_QUERY, rank, nodes, &nb);
+        grammar_neighborhood(gi->gr, CGRAPH_EXACT_QUERY, rank, nodes, &nb);
     }
     else
     {
-        grammar_neighborhood(gi->gr, CGRAPH_NODE_QUERY, rank, nodes, &nb);
+        grammar_neighborhood(gi->gr, CGRAPH_CONTAINS_QUERY, rank, nodes, &nb);
     }
 
 	if(grammar_neighborhood_next(&nb, NULL)) {
@@ -148,7 +148,7 @@ bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, b
 	return false;
 }
 
-CGraphEdgeIterator* cgraphr_edges(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool no_node_order) {
+CGraphEdgeIterator* cgraphr_edges(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool exact_query, bool no_node_order) {
     GraphReaderImpl* gi = (GraphReaderImpl*) g;
 
     for (int i=0; i < rank; i++)
@@ -162,13 +162,13 @@ CGraphEdgeIterator* cgraphr_edges(CGraphR* g, CGraphRank rank, const CGraphNode*
     if(!nb)
         return NULL;
 
-    if (no_node_order)
+    if (exact_query)
     {
-        grammar_neighborhood(gi->gr, CGRAPH_SET_QUERY, rank, nodes, nb);
+        grammar_neighborhood(gi->gr, CGRAPH_EXACT_QUERY, rank, nodes, nb);
     }
     else
     {
-        grammar_neighborhood(gi->gr, CGRAPH_NODE_QUERY, rank, nodes, nb);
+        grammar_neighborhood(gi->gr, CGRAPH_CONTAINS_QUERY, rank, nodes, nb);
     }
 
     return (CGraphEdgeIterator*) nb;

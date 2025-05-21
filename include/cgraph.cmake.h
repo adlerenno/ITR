@@ -56,6 +56,9 @@ typedef struct {
     // The nodes in hyperedge search command have no order.
     bool exist_query;
 
+    // Terminate the search after the first found match.
+    bool exact_query;
+
     // Use quicksort to sort the resulting list of edges
     bool sort_result;
 
@@ -71,10 +74,10 @@ typedef struct CGraphR_ CGraphR;
 #define CGRAPH_LABELS_ALL ((CGraphEdgeLabel) -1)  // Used for a not defined label.
 #define CGRAPH_NODES_ALL ((CGraphNode) -1)  // Used for a not defined node.
 
-#define CGRAPH_NODE_QUERY (0)  // Searches for edges that fit to the given pattern, that includes at least one node.
-#define CGRAPH_PREDICATE_QUERY (1)  // Searches for edges that have a given label (no nodes given).
+#define CGRAPH_EXACT_QUERY (0)  // Searches for edges that fit to the given pattern, that includes at least one node.
+//#define CGRAPH_PREDICATE_QUERY (1)  // Searches for edges that have a given label (no nodes given).
 #define CGRAPH_DECOMPRESS_QUERY (2)  // Query to return all edges.
-#define CGRAPH_SET_QUERY (3)  // Query like CGRAPH_NODE_QUERY, but the order of nodes is not important in the pattern.
+#define CGRAPH_CONTAINS_QUERY (3)  // Query like CGRAPH_EXACT_QUERY, but the order of nodes is not important in the pattern.
 
 /**
  * Type used as parameters for the functions to read a compressed graph.
@@ -224,7 +227,7 @@ size_t cgraphr_edge_label_count(CGraphR* g);
  * @return Iterator for the edges.
  */
 CGRAPH_API
-CGraphEdgeIterator* cgraphr_edges(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool no_node_order);
+CGraphEdgeIterator* cgraphr_edges(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool exact_query, bool no_node_order);
 
 /**
  * Determines the next element of the edge iterator.
@@ -261,7 +264,7 @@ void cgraphr_edges_finish(CGraphEdgeIterator* it);
  * @return `true` of the edge exists; else `false`.
  */
 CGRAPH_API
-bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool no_node_order);
+bool cgraphr_edge_exists(CGraphR* g, CGraphRank rank, const CGraphNode* nodes, bool exact_query, bool no_node_order);
 
 
 /**
