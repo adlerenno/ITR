@@ -21,7 +21,6 @@
 #include <bitsequence.h>
 #include <writer.h>
 #include <slhr_grammar_writer.h>
-#include "edgelist.h"
 
 typedef struct {
 	bool compressed;
@@ -34,7 +33,7 @@ typedef struct {
 		// Only needed before compression:
 		struct {
 			//Hashset* edges; // The edges are stored in a set because duplicate edges are not allowed
-            EdgeList* edges;
+            HGraph* edges;
 		};
 		// Only needed after compression:
 		struct {
@@ -93,7 +92,7 @@ CGraphW* cgraphw_init() {
 	if(!dict_rev)
 		goto err_0;
 
-	EdgeList* edges = edgelist_init();
+	HGraph * edges = hgraph_init(RANK_NONE);
 	if(!edges)
 		goto err_1;
 
@@ -119,7 +118,7 @@ CGraphW* cgraphw_init() {
 	return (CGraphW*) g;
 
 err_2:
-	edgelist_destroy(edges);
+	hgraph_destroy(edges);
 err_1:
 	hashmap_destroy(dict_rev);
 err_0:
@@ -131,7 +130,7 @@ void cgraphw_destroy(CGraphW* g) {
 	GraphWriterImpl* gi = (GraphWriterImpl*) g;
 
 	if(!gi->compressed) {
-		edgelist_destroy(gi->edges);
+		hgraph_destroy(gi->edges);
 	}
 	else {
 
@@ -157,7 +156,7 @@ int cgraphw_add_edge(CGraphW* g, const CGraphRank rank, CGraphRank label, const 
     // The memory of the edge is allocated via `alloca` because `hashmap` copies the data internally
     // and then manages the memory itself.
     // Furthermore, a short call to `alloca` is more efficient than `malloc` + `free`.
-    HEdge* edge = alloca(hedge_sizeof(rank));
+    HEdge* edge = malloc(hedge_sizeof(rank));
     if(!edge)
         return -1;
     edge->rank = rank;
@@ -173,7 +172,7 @@ int cgraphw_add_edge(CGraphW* g, const CGraphRank rank, CGraphRank label, const 
     }
     gi->nodes = max_node;
 
-    if(edgelist_append(gi->edges, edge) < 0)
+    if(hgraph_add_edge(gi->edges, edge) < 0)
         return -1;
 
     return 0;
@@ -198,7 +197,7 @@ void cgraphw_set_params(CGraphW* g, const CGraphCParams* p) {
 #endif
 }
 
-static HGraph* cgraphw_malloc_graph(GraphWriterImpl* g) {
+static HGraph* cgraphw_sort_edges(GraphWriterImpl* g) {
 	HGraph* gr = hgraph_init(RANK_NONE);
 	if(!gr)
 		goto err_1;
@@ -206,9 +205,9 @@ static HGraph* cgraphw_malloc_graph(GraphWriterImpl* g) {
 //	HashsetIterator it;
 //	hashset_iter(g->edges, &it);
 	const HEdge* edge;
-	//while((edge = hashset_iter_next(&it, NULL)) != NULL) {
-    for (size_t i = 0; i < edgelist_length(g->edges); i++) {
-        edge = edgelist_get(g->edges, i);
+//	//while((edge = hashset_iter_next(&it, NULL)) != NULL) {
+    for (size_t i = 0; i < hgraph_len(g->edges); i++) {
+        edge = hgraph_edge_get(g->edges, i);
 		HEdge* e = malloc(hedge_sizeof(edge->rank));
 		if(!e)
 			goto err_2;
@@ -244,10 +243,10 @@ int cgraphw_compress(CGraphW* g) {
 
 	if(gi->compressed)
 		return -1;
-	if(edgelist_length(gi->edges) == 0) // empty graph is not supported
+	if(hgraph_len(gi->edges) == 0) // empty graph is not supported
 		return -1;
 
-	HGraph* start_symbol = cgraphw_malloc_graph(gi);
+	HGraph* start_symbol = cgraphw_sort_edges(gi);
 	if(!start_symbol)
 		goto err_0;
 
@@ -257,7 +256,7 @@ int cgraphw_compress(CGraphW* g) {
 	// destroying `start_symbol` not needed because the memory is managed by `repair` or the grammar `gr`
 
 	// destroy the data if the repair-compression fully succeeded
-	edgelist_destroy(gi->edges);
+	hgraph_destroy(gi->edges);
 
 	gi->compressed = true;
 	gi->grammar = gr;
