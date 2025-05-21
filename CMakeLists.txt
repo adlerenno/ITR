@@ -55,6 +55,8 @@ set(SOURCES
   src/util/arith.c
   src/util/memdup.c
   src/util/panic.c
+        src/collections/edgelist.c
+        src/collections/edgelist.h
 )
 
 if(WITH_RRR)
