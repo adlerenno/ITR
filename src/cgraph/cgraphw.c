@@ -163,11 +163,11 @@ int cgraphw_add_edge(CGraphW* g, const CGraphRank rank, CGraphRank label, const 
     edge->label = (CGraphEdgeLabel) label;
     gi->terminals = gi->terminals > edge->label + 1 ? gi->terminals : edge->label + 1;
 
-    CGraphNode max_node = gi->nodes;
+    CGraphNode max_node = gi->nodes; //Should be 1 higher than the highest node.
     for (size_t i = 0; i < rank; i++)
     {
         edge->nodes[i] = (CGraphNode) nodes[i];
-        max_node = max_node > edge->nodes[i] ? max_node : edge->nodes[i];
+        max_node = max_node > edge->nodes[i]+1 ? max_node : edge->nodes[i]+1;
     }
     gi->nodes = max_node;
 

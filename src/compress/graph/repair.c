@@ -139,6 +139,7 @@ static int repair_create_node_adjacency_dict(HGraph* rule, size_t nodes, NodeAdj
 
 		for(size_t connection_type = 0; connection_type < edge->rank; connection_type++) {
 			node = edge->nodes[connection_type];
+            assert(node < nodes); //Important, reduces many not obvious mistakes I made that are not the fault of this method.
 
 			adj_type.conn_type = connection_type;
 
