@@ -7,8 +7,8 @@
 #define CONSTANTS_H
 
 // Default maximum rank of RePair
-#define DEFAULT_MAX_RANK 128
-#define LIMIT_MAX_RANK 1024
+#define DEFAULT_MAX_RANK 256
+#define LIMIT_MAX_RANK 16348
 
 // Default paramer if monograms should be replaced
 #define DEFAULT_MONOGRAMS (false)
